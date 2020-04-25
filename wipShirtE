@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My first Vue app ( https://codesandbox.io/s/stupefied-liskov-1n6bs?file=/index.html:0-7904 )</title>
+    <script src="https://unpkg.com/vue"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!--
+        {{ message }}
+        v-bind:title="message"
+        v-if="seen"
+        v-if="name==='tef'"
+      -->
+      <!-- quick debug infos -->
+      <p>
+        Active face: {{ shirtData.activeFace }} / Type: {{
+        shirtData.activeFaceType }}
+      </p>
+      <p>Active face infos: {{ shirtData.facesDatas[shirtData.activeFace] }}</p>
+      <p>
+        Active face Type Data: {{
+        shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType] }}
+      </p>
+      <!-- controls acting only on the currently selected 'face' data -->
+      <button v-on:click="shirtData.activeFaceType = 'outer'">Outer</button>
+      <button v-on:click="shirtData.activeFaceType = 'inner'">Inner</button>
+      <!-- toggle this chunk on/off ? -->
+      <!-- display either inner or outer data for active face if any -->
+      <!--
+      <ol>
+        <li
+          v-for="paramName in Object.keys(shirtData.facesDatas[shirtData.activeFace])"
+        >
+          <! --
+            {{ paramName }} {{
+          shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType]
+          }}
+          -- >
+          <span v-if="paramName === shirtData.activeFaceType">
+            Selected param: {{ paramName }} ==> {{
+            shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType][paramName]
+            }}
+          </span>
+        </li>
+      </ol>
+      -->
+      <!-- display buttons to toggle visibility, reset, .. -->
+      <!-- show a button to add one with default params -->
+      <button
+        v-on:click="addDefaultGraphicItem(shirtData.activeFace, shirtData.activeFaceType)"
+      >
+        Add a graphic item to {{shirtData.activeFace }} -->
+        {{shirtData.activeFaceType }}
+      </button>
+      <!-- display list of existing graphic items for that face inner/outer chunk -->
+      <ol>
+        <!-- v-for="graphicItem in shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType].graphics" -->
+        <li
+          v-for="(graphicItem, graphicItemIdx) in shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType].graphics"
+        >
+          {{ graphicItem.name }} ( idx: {{ graphicItemIdx }}, buddy: {{
+          graphicItem.buddy }} )
+          <!-- to remove the current graphic item -->
+          <button
+            v-on:click="removeGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Remove {{ graphicItem.name }}
+          </button>
+          <!-- to move the current graphic item up -->
+          <button
+            v-on:click="layerUpGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer Up {{ graphicItem.name }}
+          </button>
+          <!-- to move the current graphic item down -->
+          <button
+            v-on:click="layerDownGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer Down {{ graphicItem.name }}
+          </button>
+        </li>
+      </ol>
+
+      <!-- display that graphic ityems type/data/params/.. -->
+
+      <!-- display a link for each avaialable 'face'-->
+      <ul>
+        <li v-for="facesLabel in shirtData.facesLabels">
+          <!-- {{ todo.text }} -->
+          <!-- {{ facesLabel }} -->
+          <button v-on:click="shirtData.activeFace = facesLabel">
+            {{ facesLabel }}
+          </button>
+        </li>
+      </ul>
+
+      <!-- display a link for each avaialable 'face': ab-using Object.keys yet effective -->
+      <ul>
+        <li v-for="facesDataKey in Object.keys(shirtData.facesDatas)">
+          <!-- {{ todo.text }} -->
+          {{ facesDataKey }} {{ shirtData.facesDatas[facesDataKey].color }}
+          <ol>
+            <li
+              v-for="paramName in Object.keys(shirtData.facesDatas[facesDataKey])"
+            >
+              {{ paramName }} --> {{
+              shirtData.facesDatas[facesDataKey][paramName] }}
+              <span v-if="paramName === 'outer'">Outer one found</span>
+              <span v-else>Other than Outer one found</span>
+            </li>
+          </ol>
+          <!--
+          <button v-on:click="shirtData.activeFace = facesLabel">
+            {{ facesLabel }}
+          </button>
+          -->
+        </li>
+      </ul>
+    </div>
+
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          shirtData: {
+            activeFace: "global",
+            activeFaceType: "outer",
+            // R: inside & outside for each of those !
+            facesLabels: ["global", "front", "back", "Lshoulder", "Rshoulder"],
+            facesDatas: {
+              global: {
+                // for each faceData:  color , mask, maskCoords, graphics, ..
+                outer: { color: "red", graphics: [] },
+                inner: { color: "red", graphics: [] },
+                color: "cyan" // kept for debugging purposes
+              },
+              front: {
+                outer: { color: "red", graphics: [] },
+                inner: { color: "red", graphics: [] },
+                color: "red"
+              },
+              back: {
+                outer: { color: "red", graphics: [] },
+                inner: { color: "red", graphics: [] },
+                color: "red"
+              },
+              Lshoulder: {
+                outer: { color: "red", graphics: [] },
+                inner: { color: "red", graphics: [] },
+                color: "red"
+              },
+              Rshoulder: {
+                outer: { color: "red", graphics: [] },
+                inner: { color: "red", graphics: [] },
+                color: "red"
+              }
+            }
+          }
+          // other app data
+        },
+        methods: {
+          setActiveFace: function(e) {
+            console.log("setActiveFace method triggered ..");
+            console.log(this.value);
+          },
+          addDefaultGraphicItem: function(faceId, faceType) {
+            app.shirtData.facesDatas[faceId][faceType].graphics.push({
+              name: "defaultGraphicData",
+              buddy: Math.random() * 10 // tmp debug
+              //idx: app.shirtData.facesDatas[faceId][faceType].graphics.length --> maybe use later for uid ?
+            });
+          },
+          removeGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            app.shirtData.facesDatas[faceId][faceType].graphics.splice(
+              graphicItemIdx,
+              1
+            );
+          },
+          // moving a graphic item upward in the layering stakck order for later drawing in correct order
+          layerUpGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (graphicItemIdx > 0) {
+              var tmp =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx - 1
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics[
+                graphicItemIdx - 1
+              ] =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics[
+                graphicItemIdx
+              ] = tmp;
+            }
+          }
+          /*
+          layerUpGraphicItem: function(faceId, faceType, graphicItemIdx){
+            if(graphicItemIdx > 0){
+              var tmp = app.shirtData.facesDatas[faceId][faceType].graphics[graphicItemIdx-1];
+              app.shirtData.facesDatas[faceId][faceType].graphics[graphicItemIdx-1] = app.shirtData.facesDatas[faceId][faceType].graphics[graphicItemIdx];
+              app.shirtData.facesDatas[faceId][faceType].graphics[graphicItemIdx] = tmp;
+            }
+          }
+          */
+        }
+      });
+    </script>
+  </body>
+</html>

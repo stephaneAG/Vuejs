@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My first Vue app</title>
+    <script src="https://unpkg.com/vue"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!--
+        {{ message }}
+        v-bind:title="message"
+        v-if="seen"
+        v-if="name==='tef'"
+      -->
+      <!-- quick debug infos -->
+      <p>
+        Active face: {{ shirtData.activeFace }} / Type: {{
+        shirtData.activeFaceType }}
+      </p>
+      <p>Active face infos: {{ shirtData.facesDatas[shirtData.activeFace] }}</p>
+      <p>
+        Active face Type Data: {{
+        shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType] }}
+      </p>
+      <!-- controls acting only on the currently selected 'face' data -->
+      <button v-on:click="shirtData.activeFaceType = 'outer'">Outer</button>
+      <button v-on:click="shirtData.activeFaceType = 'inner'">Inner</button>
+      <!-- toggle this chunk on/off ? -->
+      <!-- display either inner or outer data for active face if any -->
+      <!--
+      <ol>
+        <li
+          v-for="paramName in Object.keys(shirtData.facesDatas[shirtData.activeFace])"
+        >
+          <! --
+            {{ paramName }} {{
+          shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType]
+          }}
+          -- >
+          <span v-if="paramName === shirtData.activeFaceType">
+            Selected param: {{ paramName }} ==> {{
+            shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType][paramName]
+            }}
+          </span>
+        </li>
+      </ol>
+      -->
+      <!-- display buttons to toggle visibility, reset, .. -->
+      <!-- show a button to add one with default params -->
+      <button
+        v-on:click="addDefaultGraphicItem(shirtData.activeFace, shirtData.activeFaceType)"
+      >
+        Add a graphic item to {{shirtData.activeFace }} -->
+        {{shirtData.activeFaceType }}
+      </button>
+      <!-- display list of existing graphic items for that face inner/outer chunk -->
+      <ol>
+        <!-- v-for="graphicItem in shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType].graphics" -->
+        <li
+          v-for="(graphicItem, graphicItemIdx) in shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType].graphics"
+        >
+          {{ graphicItem.name }} ( idx: {{ graphicItemIdx }}, buddy: {{
+          graphicItem.buddy }} )
+          <!-- to rename the graphic item: quick & indeed successful test for instant renaming -->
+          <input v-model="graphicItem.name" />
+          <!-- to specify its 'type' ( shape, image, text or pattern -->
+          <select v-model="graphicItem.type">
+            <option disabled value="">Select a graphic item type</option>
+            <!--
+                <option>A</option>
+              <option>B</option>
+              <option>C</option>
+              -->
+            <option v-for="graphicType in shirtData.graphicsTypes"
+              >{{ graphicType }}</option
+            >
+          </select>
+          <!-- to remove the current graphic item -->
+          <button
+            v-on:click="removeGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Remove
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- to move the current graphic item upmost -->
+          <button
+            v-on:click="layerUpMostGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer UpMost
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- to move the current graphic item up -->
+          <button
+            v-on:click="layerUpGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer Up
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- to move the current graphic item down -->
+          <button
+            v-on:click="layerDownGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer Down
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- to move the current graphic item downmost -->
+          <button
+            v-on:click="layerDownMostGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer DownMost
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- some params common to each 'type' of graphic item -->
+          Position X:
+          <input
+            type="range"
+            v-model="graphicItem.position.x"
+            min="-1"
+            max="1"
+            step="0.01"
+          />
+          Y:
+          <input
+            type="range"
+            v-model="graphicItem.position.y"
+            min="-1"
+            max="1"
+            step="0.01"
+          />
+          Scale X:
+          <input
+            type="range"
+            v-model="graphicItem.scale.x"
+            min="-10"
+            max="10"
+            step="0.01"
+          />
+          Y:
+          <input
+            type="range"
+            v-model="graphicItem.scale.y"
+            min="-10"
+            max="10"
+            step="0.01"
+          />
+          Rotation:
+          <input
+            type="range"
+            v-model="graphicItem.rotationInDeg"
+            min="0"
+            max="360"
+            step="0.01"
+          />
+          <!-- some more parameters depending on the 'type' of graphic item -->
+          <span v-if="graphicItem.type === 'shape'">Shape Params Here !</span>
+          <span v-else-if="graphicItem.type === 'text'"
+            >Text Params Here !</span
+          >
+          <span v-else-if="graphicItem.type === 'image'"
+            >Image Params Here !</span
+          >
+          <span v-else-if="graphicItem.type === 'pattern'"
+            >Pattern Params Here !</span
+          >
+          <span v-else>Other Type Params Here !</span>
+        </li>
+      </ol>
+
+      <!-- display that graphic ityems type/data/params/.. -->
+
+      <!-- display a link for each avaialable 'face'-->
+      <ul>
+        <li v-for="facesLabel in shirtData.facesLabels">
+          <!-- {{ todo.text }} -->
+          <!-- {{ facesLabel }} -->
+          <button v-on:click="shirtData.activeFace = facesLabel">
+            {{ facesLabel }}
+          </button>
+        </li>
+      </ul>
+
+      <!-- display a link for each avaialable 'face': ab-using Object.keys yet effective -->
+      <ul>
+        <li v-for="facesDataKey in Object.keys(shirtData.facesDatas)">
+          <!-- {{ todo.text }} -->
+          {{ facesDataKey }} {{ shirtData.facesDatas[facesDataKey].color }}
+          <ol>
+            <li
+              v-for="paramName in Object.keys(shirtData.facesDatas[facesDataKey])"
+            >
+              {{ paramName }} --> {{
+              shirtData.facesDatas[facesDataKey][paramName] }}
+              <span v-if="paramName === 'outer'">Outer one found</span>
+              <span v-else>Other than Outer one found</span>
+            </li>
+          </ol>
+          <!--
+          <button v-on:click="shirtData.activeFace = facesLabel">
+            {{ facesLabel }}
+          </button>
+          -->
+        </li>
+      </ul>
+    </div>
+
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          shirtData: {
+            activeFace: "global",
+            activeFaceType: "outer",
+            // R: inside & outside for each of those !
+            facesLabels: ["global", "front", "back", "Lshoulder", "Rshoulder"],
+            graphicsTypes: ["shape", "image", "text", "pattern"],
+            facesDatas: {
+              global: {
+                // for each faceData:  color, mask, maskCoords, graphics, .. cameraParams, ..
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "cyan" // kept for debugging purposes
+              },
+              front: {
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "red"
+              },
+              back: {
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "red"
+              },
+              Lshoulder: {
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "red"
+              },
+              Rshoulder: {
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "red"
+              }
+            }
+          }
+          // other app data
+        },
+        watch: {
+          "shirtData.facesDatas": {
+            handler: function(val, oldVal) {
+              /* ... */
+              console.log(
+                "shirtData.facesDatas updated --> likely needing a shared canvas update to visully reflect the changes .."
+              );
+              app.updateCanvas();
+            },
+            deep: true
+          }
+        },
+        methods: {
+          // ---- CNVS-related ----
+          updateCanvas: function() {
+            console.log("updating canvas ..");
+            Object.keys(app.shirtData.facesDatas).forEach(function(facesData) {
+              if (
+                typeof app.shirtData.facesDatas[facesData].visible ===
+                  "undefined" ||
+                app.shirtData.facesDatas[facesData].visible === true
+              ) {
+                // process the outer & inner chunk of the 'face'
+                if (
+                  typeof app.shirtData.facesDatas[facesData].outer !==
+                  "undefined"
+                ) {
+                  // if has a mask specified, apply it prior to drawing
+                  if (
+                    typeof app.shirtData.facesDatas[facesData].outer.mask !==
+                    "undefined"
+                  ) {
+                    console.log(
+                      "mask to be applied before drawing graphics in here .."
+                    );
+                  }
+                  // draw each graphics residing on the face's inner/outer chunk, starting by the bottom-most one
+                  for (
+                    var i =
+                      app.shirtData.facesDatas[facesData].outer.graphics
+                        .length - 1;
+                    i >= 0;
+                    i--
+                  ) {
+                    console.log("drawing graphic item with idx:" + i);
+                  }
+                }
+              }
+            });
+            // once all faces data have been drawn, add the 'details' for the seams & the textures with overlay blending mode
+          },
+          // mapping pane controls to one of the 'faces'
+          setActiveFace: function(e) {
+            console.log("setActiveFace method triggered ..");
+            console.log(this.value);
+          },
+          // adding a graphic item to a 'face' inner/outer chunk
+          addDefaultGraphicItem: function(faceId, faceType) {
+            app.shirtData.facesDatas[faceId][faceType].graphics.push({
+              name: "defaultGraphicData",
+              type: "shape", // shape||img||text||pattern
+              buddy: (Math.random() * 10).toFixed(2), // tmp debug
+              //idx: app.shirtData.facesDatas[faceId][faceType].graphics.length --> maybe use later for uid ?
+              // some 'generic' params, common to all 'tpyes'
+              position: { x: 0, y: 0 }, // R: 'll be relative to center OR top-left corner of 'face bounding rect'
+              scale: { x: 1, y: 1 }, // R: is likely to need change depending on the dimensions of shape/img/txt/pattern
+              rotationInDeg: 0 // 2D CW rotation in degrees, centered to object being rotated
+              // & some less generic ones:
+              // we currently 'share' all params for each graphic objects,
+              // these may be empty, but are kept to be able to quickly change a type of graphic item
+              // and get back to the previous type's params or stuff ( does make sense ? )
+            });
+          },
+          // removing a graphic item to a 'face' inner/outer chunk
+          removeGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            app.shirtData.facesDatas[faceId][faceType].graphics.splice(
+              graphicItemIdx,
+              1
+            );
+          },
+          // moving a graphic item upmost in the layering stakck order for later drawing in correct order
+          layerUpMostGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (graphicItemIdx > 0) {
+              /*
+              var toRePush = app.shirtData.facesDatas[faceId][
+                faceType
+              ].graphics.splice(graphicItemIdx, 1);
+              */
+              var toRePush =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics.splice(
+                graphicItemIdx,
+                1
+              );
+              app.shirtData.facesDatas[faceId][faceType].graphics.unshift(
+                toRePush
+              );
+            }
+          },
+          // moving a graphic item downmost in the layering stakck order for later drawing in correct order
+          layerDownMostGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (
+              graphicItemIdx <
+              app.shirtData.facesDatas[faceId][faceType].graphics.length - 1
+            ) {
+              /* was the stuff updating BUT not triggering redraw
+              var toRePush = app.shirtData.facesDatas[faceId][
+                faceType
+              ].graphics.splice(graphicItemIdx, 1);
+              */
+              var toRePush =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics.splice(
+                graphicItemIdx,
+                1
+              );
+              app.shirtData.facesDatas[faceId][faceType].graphics.push(
+                toRePush
+              );
+              console.log(toRePush); // working fine
+              // won't trigger any redraw ?!
+              /*
+              app.shirtData.facesDatas[faceId][faceType].graphics.push(
+                toRePush
+              );
+              */
+              //  forces triggerring a Vue array detection change ?
+              /*
+              Vue.set(
+                app.shirtData.facesDatas[faceId][faceType].graphics,
+                app.shirtData.facesDatas[faceId][faceType].graphics.length,
+                toRePush
+              );
+              */
+            }
+          },
+          // moving a graphic item upward in the layering stakck order for later drawing in correct order
+          layerUpGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (graphicItemIdx > 0) {
+              var tmp =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx - 1
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics[
+                graphicItemIdx - 1
+              ] =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              /* contrary to adding or removing, won't trigger any redraw 
+              app.shirtData.facesDatas[faceId][faceType].graphics[
+                graphicItemIdx
+              ] = tmp;
+              */
+              //  forces triggerring a Vue array detection change
+              Vue.set(
+                app.shirtData.facesDatas[faceId][faceType].graphics,
+                graphicItemIdx,
+                tmp
+              );
+            }
+          },
+          // moving a graphic item downward in the layering stakck order for later drawing in correct order
+          layerDownGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (
+              graphicItemIdx <
+              app.shirtData.facesDatas[faceId][faceType].graphics.length - 1
+            ) {
+              var tmp =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx + 1
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics[
+                graphicItemIdx + 1
+              ] =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              /* contrary to adding or removing, won't trigger any redraw 
+              app.shirtData.facesDatas[faceId][faceType].graphics[
+                graphicItemIdx
+              ] = tmp;
+              */
+              //  forces triggerring a Vue array detection change
+              Vue.set(
+                app.shirtData.facesDatas[faceId][faceType].graphics,
+                graphicItemIdx,
+                tmp
+              );
+            }
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

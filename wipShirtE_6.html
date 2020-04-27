@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My first Vue app</title>
+    <script src="https://unpkg.com/vue"></script>
+    <style>
+      #shared2dTextureCnvs {
+        border: 1px solid black;
+      }
+      /* better debugging visibility */
+      ol#graphicItemsList li {
+        border: 0.5px solid gray;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 10px;
+        overflow: hidden;
+
+      }
+      ol#graphicItemsList li input, ol#graphicItemsList li button, ol#graphicItemsList li select {
+        display: flex-inline;
+        justify-items: center;
+        align-content: center;
+        height: 25px;
+      }
+      ol#graphicItemsList li .fakeFileInput {
+        border: 1px solid lightgray;
+        border-radius: 4px;
+        font-size: 10pt;
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <!--
+        {{ message }}
+        v-bind:title="message"
+        v-if="seen"
+        v-if="name==='tef'"
+      -->
+      <!-- ==== CNVS PART ==== -->
+      <canvas id="shared2dTextureCnvs" width="300" height="300"></canvas>
+      <!-- quick debug infos -->
+      <p>
+        Active face: {{ shirtData.activeFace }} / Type: {{
+        shirtData.activeFaceType }}
+      </p>
+      <!-- R: the following slow down the app, but are most useful while debugging !
+      <p>Active face infos: {{ shirtData.facesDatas[shirtData.activeFace] }}</p>
+      <p>
+        Active face Type Data: {{
+        shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType] }}
+      </p>-->
+      <!-- controls acting only on the currently selected 'face' data -->
+      <button v-on:click="shirtData.activeFaceType = 'outer'">Outer</button>
+      <button v-on:click="shirtData.activeFaceType = 'inner'">Inner</button>
+      <!-- toggle this chunk on/off ? -->
+      <!-- display either inner or outer data for active face if any -->
+      <!--
+      <ol>
+        <li
+          v-for="paramName in Object.keys(shirtData.facesDatas[shirtData.activeFace])"
+        >
+          <! --
+            {{ paramName }} {{
+          shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType]
+          }}
+          -- >
+          <span v-if="paramName === shirtData.activeFaceType">
+            Selected param: {{ paramName }} ==> {{
+            shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType][paramName]
+            }}
+          </span>
+        </li>
+      </ol>
+      -->
+      <!-- display buttons to toggle visibility, reset, .. -->
+      <!-- show a button to add one with default params -->
+      <button
+        v-on:click="addDefaultGraphicItem(shirtData.activeFace, shirtData.activeFaceType)"
+      >
+        Add a graphic item to {{shirtData.activeFace }} -->
+        {{shirtData.activeFaceType }}
+      </button>
+      <!-- display list of existing graphic items for that face inner/outer chunk -->
+      <ol id="graphicItemsList">
+        <!-- v-for="graphicItem in shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType].graphics" -->
+        <li
+          v-for="(graphicItem, graphicItemIdx) in shirtData.facesDatas[shirtData.activeFace][shirtData.activeFaceType].graphics"
+        >
+          {{ graphicItem.name }} ( idx: {{ graphicItemIdx }}, buddy: {{
+          graphicItem.buddy }} )
+          <!-- to rename the graphic item: quick & indeed successful test for instant renaming -->
+          <input v-model="graphicItem.name" />
+          <!-- to specify its 'type' ( shape, image, text or pattern -->
+          <select v-model="graphicItem.type">
+            <option disabled value="">Select a graphic item type</option>
+            <!--
+                <option>A</option>
+              <option>B</option>
+              <option>C</option>
+              -->
+            <option v-for="graphicType in shirtData.graphicsTypes"
+              >{{ graphicType }}</option
+            >
+          </select>
+          <!-- to remove the current graphic item -->
+          <button
+            v-on:click="removeGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Remove
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- to move the current graphic item upmost -->
+          <button
+            v-on:click="layerUpMostGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer UpMost
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- to move the current graphic item up -->
+          <button
+            v-on:click="layerUpGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer Up
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- to move the current graphic item down -->
+          <button
+            v-on:click="layerDownGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer Down
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- to move the current graphic item downmost -->
+          <button
+            v-on:click="layerDownMostGraphicItem(shirtData.activeFace, shirtData.activeFaceType, graphicItemIdx)"
+          >
+            Layer DownMost
+            <!-- {{ graphicItem.name }} -->
+          </button>
+          <!-- some params common to each 'type' of graphic item -->
+          Position X:
+          <input
+            type="range"
+            v-model="graphicItem.position.x"
+            min="-1"
+            max="1"
+            step="0.01"
+          />
+          Y:
+          <input
+            type="range"
+            v-model="graphicItem.position.y"
+            min="-1"
+            max="1"
+            step="0.01"
+          />
+          Scale X:
+          <input
+            type="range"
+            v-model="graphicItem.scale.x"
+            min="-10"
+            max="10"
+            step="0.01"
+          />
+          Y:
+          <input
+            type="range"
+            v-model="graphicItem.scale.y"
+            min="-10"
+            max="10"
+            step="0.01"
+          />
+          Rotation:
+          <input
+            type="range"
+            v-model="graphicItem.rotationInDeg"
+            min="0"
+            max="360"
+            step="0.01"
+          />
+          <!-- some more parameters depending on the 'type' of graphic item -->
+          <span v-if="graphicItem.type === 'shape'">
+            Shape Params Here !
+            <input type="checkbox" v-model="graphicItem._shapeStroked"/>
+            <input type="color" v-model="graphicItem._shapeStrokeColor" />
+            <input type="checkbox" v-model="graphicItem._shapeFilled"/>
+            <input type="color" v-model="graphicItem._shapeFillColor" />
+            <input type="number" v-model="graphicItem._shapeStrokeWidth" min="0.25" step="0.25" />
+          </span>
+          <span v-else-if="graphicItem.type === 'text'"
+            >Text Params Here !
+            <input type="text" v-model="graphicItem._textValue"/>
+            <input type="text" v-model="graphicItem._textSize"/>
+            <input type="checkbox" v-model="graphicItem._textStroked"/>
+            <!-- <input type="color" v-model="graphicItem._textStrokeColor" value="" v-bind:defaultValue="graphicItem._textStrokeColor"/> -->
+            <!-- <input type="color" v-model="graphicItem.testColor" /> -->
+            <input type="color" v-model="graphicItem._textStrokeColor" />
+            <input type="checkbox" v-model="graphicItem._textFilled"/>
+            <!-- <input type="color" v-model="graphicItem._textFillColor" v-bind:value="graphicItem._textFillColor"/> -->
+            <!-- <input type="color" v-bind:value="graphicItem._textFillColor"/>-->
+            <input type="color" v-model="graphicItem._textFillColor" />
+            <input type="number" v-model="graphicItem._shapeStrokeWidth" min="0.25" step="0.25" />
+            </span
+          >
+          <span v-else-if="graphicItem.type === 'image'">
+            Image Params Here !
+            <input type="text" v-model="graphicItem._imageUrl" />
+            <!-- to select an image from the already added ones -->
+            <select> <!-- v-model="graphicItem.type" -->
+                <option disabled value="">Select from uploaded images</option>
+                <option v-for="tmpImgKey in Object.keys(tmpImgs)"
+                  >{{ tmpImgKey }}</option
+                >
+              </select>
+            <!-- to browse for image file(s) to be then used anywhere in the app -->
+            <label class="fakeFileInput">
+              Add image files ..
+              <input v-on:change="loadTmpImgs($event)" type="file" accept="image/*" multiple style="display: none;" />
+            </label>
+            <!-- <input v-on:change="loadTmpImgs($event)" type="file" accept="image/*" multiple/> -->
+            </span>
+          <span v-else-if="graphicItem.type === 'pattern'"
+            >Pattern Params Here !</span
+          >
+          <span v-else>Other Type Params Here !</span>
+        </li>
+      </ol>
+
+      <!-- display that graphic ityems type/data/params/.. -->
+
+      <!-- display a link for each avaialable 'face'-->
+      <ul>
+        <li v-for="facesLabel in shirtData.facesLabels">
+          <!-- {{ todo.text }} -->
+          <!-- {{ facesLabel }} -->
+          <button v-on:click="shirtData.activeFace = facesLabel">
+            {{ facesLabel }}
+          </button>
+        </li>
+      </ul>
+
+      <!-- display a link for each avaialable 'face': ab-using Object.keys yet effective -->
+      <ul>
+        <li v-for="facesDataKey in Object.keys(shirtData.facesDatas)">
+          <!-- {{ todo.text }} -->
+          {{ facesDataKey }} {{ shirtData.facesDatas[facesDataKey].color }}
+          <ol>
+            <li
+              v-for="paramName in Object.keys(shirtData.facesDatas[facesDataKey])"
+            >
+              {{ paramName }} --> {{
+              shirtData.facesDatas[facesDataKey][paramName] }}
+              <span v-if="paramName === 'outer'">Outer one found</span>
+              <span v-else>Other than Outer one found</span>
+            </li>
+          </ol>
+          <!--
+          <button v-on:click="shirtData.activeFace = facesLabel">
+            {{ facesLabel }}
+          </button>
+          -->
+        </li>
+      </ul>
+    </div>
+
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          //shared2dTextureCnvs: document.querySelector("#shared2dTextureCnvs"),
+          //shared2dTextureCnvsCtx: shared2dTextureCnvs.getContext("2d"),
+          shared2dTextureCnvsCtx: undefined,
+          tmpImgs: {}, // 'll 'store' img loaded from URL ( instead of re-creating img objects when needing to draw them )
+          tmpImgsLoadCntr: 0, // updated/ used when browsing images to upload ( while they're being added to memory )
+          tmpImgsToLoadCntr: 0, // used in pair with the above, to know how much is left to try loading
+          shirtData: {
+            activeFace: "global",
+            activeFaceType: "outer",
+            activeAreaBounds: undefined, // 'll be updated / used while we draw layered stuff onto different faces
+            activeShirtConfigName: "defaultShirtdata", // R: not currently/yet used
+            // R: inside & outside for each of those !
+            facesLabels: ["global", "front", "back", "Lshoulder", "Rshoulder"],
+            graphicsTypes: ["shape", "image", "text", "pattern"],
+            facesDatas: {
+              //configName: "defaultShirtdata", // a configuration name ( could be useful to save / load different configs )
+              global: {
+                // for each faceData:  color, mask, maskCoords, bounding area, graphics, .. cameraParams, ..
+                outer: { color: "red", graphics: [], visible: true, area: { x: 0, y: 0, width: 150, height: 150} },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "cyan" // kept for debugging purposes
+              },
+              front: {
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "red"
+              },
+              back: {
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "red"
+              },
+              Lshoulder: {
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "red"
+              },
+              Rshoulder: {
+                outer: { color: "red", graphics: [], visible: true },
+                inner: { color: "red", graphics: [], visible: true },
+                color: "red"
+              }
+            }
+          }
+          // other app data
+        },
+        watch: {
+          "shirtData.facesDatas": {
+            handler: function(val, oldVal) {
+              /* ... */
+              /*
+              console.log(
+                "shirtData.facesDatas updated --> likely needing a shared canvas update to visully reflect the changes .."
+              );
+              */
+
+              app.updateCanvas();
+            },
+            deep: true
+          }
+        },
+        mounted: function() {
+          console.log("mounted called ..");
+          var shared2dTextureCnvs = document.querySelector(
+            "#shared2dTextureCnvs"
+          );
+          var ctx = shared2dTextureCnvs.getContext("2d");
+          this.shared2dTextureCnvsCtx = ctx;
+          /*
+                  var shared2dTextureCnvs = document.querySelector(
+                    "#shared2dTextureCnvs"
+                  );
+                  //this.shared2dTextureCnvsCtx = shared2dTextureCnvs.getContext("2d");
+                  app.shared2dTextureCnvsCtx = shared2dTextureCnvs.getContext("2d");
+                  */
+          /**/
+          this.$nextTick(function() {
+            console.log("nextTick called ..");
+            // Code that will run only after the
+            // entire view has been rendered
+            /*
+                    var shared2dTextureCnvs = document.querySelector(
+                      "#shared2dTextureCnvs"
+                    );
+                    */
+            /*
+                    this.shared2dTextureCnvsCtx = shared2dTextureCnvs.getContext(
+                      "2d"
+                    );
+                    */
+            //app.shared2dTextureCnvsCtx = shared2dTextureCnvs.getContext("2d");
+            /*
+                    this.shared2dTextureCnvsCtx = shared2dTextureCnvs.getContext(
+                      "2d"
+                    );
+                    */
+            //var ctx = shared2dTextureCnvs.getContext("2d");
+            //this.shared2dTextureCnvsCtx = ctx;
+          });
+          /**/
+        },
+        methods: {
+          // ---- image files input handling via user-browse button(s) ----
+          tmpImgsLoadedCallback: function(){
+            if(app.tmpImgsToLoadCntr === app.tmpImgsLoadCntr){
+              console.log('all user imgs should have been loaded or errored by now ? :D ..');
+            } else {
+              console.log('wating for at least one user img to be loaded or error ..');
+            }
+          },
+          loadTmpImgs: function(event) {
+            console.log('user has browsed files that needs to be imported ..');
+            // now we have access to the native event
+            if (event) {
+              event.preventDefault() // shouldn't be needed for our needs
+              // R: https://stackoverflow.com/questions/3814231/loading-an-image-to-a-img-from-input-file
+              var selectedFiles = event.target.files;
+              if(FileReader && selectedFiles && selectedFiles.length){
+                app.tmpImgsLoadCntr = 0; // reset loading imgs counter
+                app.tmpImgsToLoadCntr = selectedFiles.length;
+                for(var i=0; i < selectedFiles.length; i++){
+                  console.log('selectedFile '+ i + selectedFiles[i].name); // debug listing files selected
+                  var fr = new FileReader(); // currently not re-used ( 'd allow concurent loads ? .. )
+                  fr.onload = function(e) {
+                    app.tmpImgsLoadCntr++;
+                    app.tmpImgsLoadedCallback();
+                  }
+                  fr.onerror = function(e) {
+                    app.tmpImgsLoadCntr++;
+                    app.tmpImgsLoadedCallback();
+                  }
+                  fr.readAsDataURL(selectedFiles[i]);
+                }
+                // clear listing right next to 'browser' button(s) ?
+                // --> by hiding input within a label .. done via CSS ;)
+                
+                /* -- TODO: implm the following for better img testing ! ----
+                var fr = new FileReader();
+                fr.onload = function (e) {
+                  //document.getElementById(outImage).src = fr.result;
+                  //document.getElementById(outImage).src = e.target.result;
+                }
+                fr.readAsDataURL(files[0]);
+                */
+              }
+            }
+          },
+
+          // ---- CNVS drawing helpers ----
+          drawGraphic_shape: function(textGraphicData){
+            app.shared2dTextureCnvsCtx.save();
+            /* -- not taking in account 'bounding areas' ( see below )
+            app.shared2dTextureCnvsCtx.translate(((textGraphicData.position.x *
+                  app.shared2dTextureCnvsCtx.canvas.width) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.width / 2), ((textGraphicData.position.y *
+                  app.shared2dTextureCnvsCtx.canvas.height) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.height / 2));
+            */
+            // now taking in account 'bounding areas' for stuff to be relatively positioned to ( as well as 'clip' if a 'mask' is also used )
+            if(typeof app.activeAreaBounds !== 'undefined'){
+              //app.activeAreaBounds -_> .x, .y, .width, .height
+              // ex: from app.shirtData.facesDatas[facesData].outer.area
+              app.shared2dTextureCnvsCtx.translate(
+                ((textGraphicData.position.x * app.activeAreaBounds.width) /2 +
+                  app.activeAreaBounds.x + app.activeAreaBounds.width / 2),
+                ((textGraphicData.position.y *
+                  app.activeAreaBounds.height) /2 +
+                  app.activeAreaBounds.y + app.activeAreaBounds.height / 2)
+              );
+            } else {
+              app.shared2dTextureCnvsCtx.translate(((textGraphicData.position.x *
+                  app.shared2dTextureCnvsCtx.canvas.width) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.width / 2), ((textGraphicData.position.y *
+                  app.shared2dTextureCnvsCtx.canvas.height) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.height / 2));
+            }
+
+            app.shared2dTextureCnvsCtx.rotate(textGraphicData.rotationInDeg*Math.PI/180); // R: deg to rad
+            // drawh shape(s)
+            if(textGraphicData._shapeFilled === true){
+              app.shared2dTextureCnvsCtx.fillStyle = textGraphicData._shapeFillColor;
+              app.shared2dTextureCnvsCtx.beginPath();
+              app.shared2dTextureCnvsCtx.fillRect(0-textGraphicData._shapeWidth/2, 0-textGraphicData._shapeHeight/2, textGraphicData._shapeWidth, textGraphicData._shapeHeight); // centered img - bigger than cnvs dims
+              app.shared2dTextureCnvsCtx.closePath();
+            }
+            if(textGraphicData._shapeStroked === true){
+              app.shared2dTextureCnvsCtx.lineWidth = textGraphicData._shapeStrokeWidth;
+              app.shared2dTextureCnvsCtx.strokeStyle = textGraphicData._shapeStrokeColor;
+              app.shared2dTextureCnvsCtx.beginPath();
+              app.shared2dTextureCnvsCtx.strokeRect(0-textGraphicData._shapeWidth/2, 0-textGraphicData._shapeHeight/2, textGraphicData._shapeWidth, textGraphicData._shapeHeight); // centered img - bigger than cnvs dims
+              app.shared2dTextureCnvsCtx.closePath();
+            }
+            app.shared2dTextureCnvsCtx.resetTransform(); // bypass glitch with imgs ?
+            app.shared2dTextureCnvsCtx.restore();
+          },
+
+          drawGraphic_image: function(textGraphicData){
+            app.shared2dTextureCnvsCtx.save();
+            app.shared2dTextureCnvsCtx.translate(((textGraphicData.position.x *
+                  app.shared2dTextureCnvsCtx.canvas.width) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.width / 2), ((textGraphicData.position.y *
+                  app.shared2dTextureCnvsCtx.canvas.height) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.height / 2));
+            //app.shared2dTextureCnvsCtx.rotate(-Math.PI/2); // const test angle
+            app.shared2dTextureCnvsCtx.rotate(textGraphicData.rotationInDeg*Math.PI/180); // R: deg to rad
+
+            /*
+            var tmpImg = new Image();
+            tmpImg.onload = function(e){
+              console.log('image to be drawn loaded, now adding to cnvs ..');
+              //app.shared2dTextureCnvsCtx.drawImage(tmpImg, 0-tmpImg.width/2, 0-tmpImg.height/2); // centered img - bigger than cnvs dims
+              var scaledDims = { width: tmpImg.width/4, height: tmpImg.height/4 }
+              app.shared2dTextureCnvsCtx.beginPath();
+              app.shared2dTextureCnvsCtx.drawImage(tmpImg, 0-scaledDims.width/2, 0-scaledDims.height/2, scaledDims.width, scaledDims.height); // centered img - bigger than cnvs dims
+              app.shared2dTextureCnvsCtx.closePath();
+              app.shared2dTextureCnvsCtx.resetTransform(); // bypass glitch with imgs ?
+              app.shared2dTextureCnvsCtx.restore();
+            }
+            //tmpImg.src = 'https://i1.pngguru.com/preview/223/747/674/animales-23593-bubka-cat-icon-png-icon.jpg';
+            //tmpImg.src ='https://img.favpng.com/7/13/8/computer-icons-portable-network-graphics-github-logo-png-favpng-bX7Gk3MtMJFGMEiYQ0mzpf8Bw.jpg';
+            tmpImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQ8O4bRPCFhsitYTuVNv6-1QQvR_BOSCMKF8npZxPqyhee5j5oi&usqp=CAU';
+            */
+
+            // quick mod to bypass the need for having already-DL-ed images to work with
+            // R: to take cara of better + thnk how to maximise available storage to work with stuff ( limits of localStorage & stuff )
+            if(typeof textGraphicData._imageUid !== 'undefined' && app.tmpImgs[textGraphicData._imageUid] !== 'undefined'){
+              console.log('==> IMG DATA FOUND WITHIN APP !');
+              var tmpImg = app.tmpImgs[textGraphicData._imageUid];
+              var scaledDims = { width: tmpImg.width/4, height: tmpImg.height/4 }
+              app.shared2dTextureCnvsCtx.beginPath();
+              app.shared2dTextureCnvsCtx.drawImage(tmpImg, 0-scaledDims.width/2, 0-scaledDims.height/2, scaledDims.width, scaledDims.height); // centered img - bigger than cnvs dims
+              app.shared2dTextureCnvsCtx.closePath();
+              app.shared2dTextureCnvsCtx.resetTransform(); // bypass glitch with imgs ?
+              app.shared2dTextureCnvsCtx.restore();
+            } else {
+              console.log('==> IMG DATA NOT FOUND WITHIN APP !');
+              var tmpImg = new Image();
+              tmpImg.onload = function(e){
+                // quick 'unique id' for our loaded img
+                var d= new Date();
+                var quickUid = 'd' + d.getDate() + 'm' + (d.getMonth()+1) + 'y' + d.getFullYear() + 'h' + d.getHours() + 'm' + d.getMinutes() + 's' + d.getSeconds()
+                textGraphicData._imageUid = quickUid; // will it pass since undefined at 1st ? or should I define it to undefined or special Vue stuff ? ..
+                app.tmpImgs[textGraphicData._imageUid] = tmpImg; // save the img itself to our app data
+                console.log('image to be drawn loaded, now adding to cnvs ..');
+                //app.shared2dTextureCnvsCtx.drawImage(tmpImg, 0-tmpImg.width/2, 0-tmpImg.height/2); // centered img - bigger than cnvs dims
+                var scaledDims = { width: tmpImg.width/4, height: tmpImg.height/4 }
+                app.shared2dTextureCnvsCtx.beginPath();
+                app.shared2dTextureCnvsCtx.drawImage(tmpImg, 0-scaledDims.width/2, 0-scaledDims.height/2, scaledDims.width, scaledDims.height); // centered img - bigger than cnvs dims
+                app.shared2dTextureCnvsCtx.closePath();
+                app.shared2dTextureCnvsCtx.resetTransform(); // bypass glitch with imgs ?
+                app.shared2dTextureCnvsCtx.restore();
+              }
+              //tmpImg.src = 'https://i1.pngguru.com/preview/223/747/674/animales-23593-bubka-cat-icon-png-icon.jpg';
+              //tmpImg.src ='https://img.favpng.com/7/13/8/computer-icons-portable-network-graphics-github-logo-png-favpng-bX7Gk3MtMJFGMEiYQ0mzpf8Bw.jpg';
+              tmpImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQ8O4bRPCFhsitYTuVNv6-1QQvR_BOSCMKF8npZxPqyhee5j5oi&usqp=CAU';
+            }
+            
+          },
+          /*
+                    _textValue: "defaultTextValue",
+                    _textFont: "Arial",
+                    _textSize: "12",
+                    _textFilled: true,
+                    _textFillColor: "black",
+                    _textStroked: true,
+                    _textStrokeColor: "black",
+                    _textHorizontalAlign: "top",
+                    _textVerticalAlign: "left"
+                */
+          drawGraphic_text: function(textGraphicData) {
+            //console.log("drawGraphic_text -->", textGraphicData);
+            app.shared2dTextureCnvsCtx.textAlign =
+              textGraphicData._textHorizontalAlign;
+            app.shared2dTextureCnvsCtx.textBaseline =
+              textGraphicData._textVerticalAlign;
+            app.shared2dTextureCnvsCtx.font =
+              textGraphicData._textSize + "px " + textGraphicData._textFont;
+            /*  
+            if (textGraphicData._textFilled === true) {
+              app.shared2dTextureCnvsCtx.beginPath();
+              app.shared2dTextureCnvsCtx.fillStyle =
+                textGraphicData._textFillColor;
+              app.shared2dTextureCnvsCtx.fillText(
+                textGraphicData._textValue,
+                //textGraphicData.position.x,
+                //textGraphicData.position.y
+                (textGraphicData.position.x *
+                  app.shared2dTextureCnvsCtx.canvas.width) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.width / 2,
+                (textGraphicData.position.y *
+                  app.shared2dTextureCnvsCtx.canvas.height) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.height / 2
+              );
+              app.shared2dTextureCnvsCtx.closePath();
+            }
+            if (textGraphicData._textStroked === true) {
+              app.shared2dTextureCnvsCtx.beginPath();
+              app.shared2dTextureCnvsCtx.strokeStyle =
+                textGraphicData._textFillColor;
+              app.shared2dTextureCnvsCtx.strokeText(
+                textGraphicData._textValue,
+                //textGraphicData.position.x,
+                //textGraphicData.position.y
+                (textGraphicData.position.x *
+                  app.shared2dTextureCnvsCtx.canvas.width) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.width / 2,
+                (textGraphicData.position.y *
+                  app.shared2dTextureCnvsCtx.canvas.height) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.height / 2
+              );
+              app.shared2dTextureCnvsCtx.closePath();
+            }
+            */
+            // draw on possibly rotated ctx
+            app.shared2dTextureCnvsCtx.save();
+            // scaling correctly ?
+            /* -- R: for text, 'd lead to stretching: better off using fontSize --
+            if(textGraphicData._lockedScaleXY === true) {
+              // TODO: know which of x or y was adjusted to adjust other one
+              app.shared2dTextureCnvsCtx.scale(textGraphicData.scale.x, textGraphicData.scale.y);
+            }
+            else { app.shared2dTextureCnvsCtx.scale(textGraphicData.scale.x, textGraphicData.scale.y); }
+            */
+            // drawing text
+            /*
+            app.shared2dTextureCnvsCtx.translate(((textGraphicData.position.x *
+                  app.shared2dTextureCnvsCtx.canvas.width) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.width / 2), ((textGraphicData.position.y *
+                  app.shared2dTextureCnvsCtx.canvas.height) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.height / 2));
+            */
+
+            // now taking in account 'bounding areas' for stuff to be relatively positioned to ( as well as 'clip' if a 'mask' is also used )
+            if(typeof app.activeAreaBounds !== 'undefined'){
+              //app.activeAreaBounds -_> .x, .y, .width, .height
+              // ex: from app.shirtData.facesDatas[facesData].outer.area
+              app.shared2dTextureCnvsCtx.translate(
+                ((textGraphicData.position.x * app.activeAreaBounds.width) /2 +
+                  app.activeAreaBounds.x + app.activeAreaBounds.width / 2),
+                ((textGraphicData.position.y *
+                  app.activeAreaBounds.height) /2 +
+                  app.activeAreaBounds.y + app.activeAreaBounds.height / 2)
+              );
+            } else {
+              app.shared2dTextureCnvsCtx.translate(((textGraphicData.position.x *
+                  app.shared2dTextureCnvsCtx.canvas.width) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.width / 2), ((textGraphicData.position.y *
+                  app.shared2dTextureCnvsCtx.canvas.height) /
+                  2 +
+                  app.shared2dTextureCnvsCtx.canvas.height / 2));
+            }
+
+            //app.shared2dTextureCnvsCtx.rotate(-Math.PI/2); // const test angle
+            app.shared2dTextureCnvsCtx.rotate(textGraphicData.rotationInDeg*Math.PI/180); // R: deg to rad
+            // test
+            //app.shared2dTextureCnvsCtx.fillText("Your Label Here", 0, 0); // to minus half ?
+            if(textGraphicData._textFilled === true){
+              app.shared2dTextureCnvsCtx.fillStyle = textGraphicData._textFillColor;
+              app.shared2dTextureCnvsCtx.beginPath();
+              app.shared2dTextureCnvsCtx.fillText(textGraphicData._textValue, 0, 0);
+              app.shared2dTextureCnvsCtx.closePath();
+            }
+            if(textGraphicData._textStroked === true){
+              app.shared2dTextureCnvsCtx.lineWidth = textGraphicData._shapeStrokeWidth; // R: shared with shape
+              app.shared2dTextureCnvsCtx.strokeStyle = textGraphicData._textStrokeColor;
+              app.shared2dTextureCnvsCtx.beginPath();
+              app.shared2dTextureCnvsCtx.strokeText(textGraphicData._textValue, 0, 0);
+              app.shared2dTextureCnvsCtx.closePath();
+            }
+            app.shared2dTextureCnvsCtx.resetTransform(); // bypass glitch with imgs ?
+            app.shared2dTextureCnvsCtx.restore();
+          },
+          // ---- CNVS-related ----
+          updateCanvas: function() {
+            // quick debug: R 'this' === 'app' here
+            //app.shared2dTextureCnvsCtx.restore(); // prevent weird bug ? ( image can't be below text ? .. )
+            //app.shared2dTextureCnvsCtx.save();
+            //app.shared2dTextureCnvsCtx.resetTransform(); // bypass glitch with imgs ?
+            app.shared2dTextureCnvsCtx.clearRect(0, 0, app.shared2dTextureCnvsCtx.canvas.width, app.shared2dTextureCnvsCtx.canvas.height);
+            /**/
+            //app.shared2dTextureCnvsCtx.clearRect(0, 0, 300, 300);
+            /* quick test
+            app.shared2dTextureCnvsCtx.beginPath();
+            app.shared2dTextureCnvsCtx.fillStyle = "red";
+            app.shared2dTextureCnvsCtx.fillRect(0, 0, 100, 100);
+            app.shared2dTextureCnvsCtx.closePath();
+            */
+
+            //console.log("updating canvas ..");
+            Object.keys(app.shirtData.facesDatas).forEach(function(facesData) {
+              if (
+                typeof app.shirtData.facesDatas[facesData].visible ===
+                  "undefined" ||
+                app.shirtData.facesDatas[facesData].visible === true
+              ) {
+                // process the outer & inner chunk of the 'face'
+                if (
+                  typeof app.shirtData.facesDatas[facesData].outer !==
+                  "undefined"
+                ) {
+                  // if has a mask specified, apply it prior to drawing
+                  if (
+                    typeof app.shirtData.facesDatas[facesData].outer.mask !==
+                    "undefined"
+                  ) {
+                    console.log(
+                      "mask to be applied before drawing graphics in here .."
+                    );
+                  }
+
+                  // if has a mask specified, apply it prior to drawing
+                  if (
+                    typeof app.shirtData.facesDatas[facesData].outer.area !==
+                    "undefined"
+                  ) {
+                    console.log(
+                      "area bounds to be used while drawing graphics in here .."
+                    );
+                    app.activeAreaBounds = app.shirtData.facesDatas[facesData].outer.area;
+                  } else {
+                    app.activeAreaBounds = undefined;
+                  }
+
+                  // draw each graphics residing on the face's inner/outer chunk, starting by the bottom-most one
+                  for (
+                    var i =
+                      app.shirtData.facesDatas[facesData].outer.graphics
+                        .length - 1;
+                    i >= 0;
+                    i--
+                  ) {
+                    //app.shared2dTextureCnvsCtx.resetTransform(); // bypass glitch with imgs ?
+                    /*
+                    console.log(
+                      "drawing graphic item with idx:" +
+                        i +
+                        " from " +
+                        facesData +
+                        " outer stuff"
+                    );
+                    */
+                    // use different helper fcns depending on the type of stuff to be drawn
+                    if (
+                      app.shirtData.facesDatas[facesData].outer.graphics[i]
+                        .type === "text"
+                    ) {
+                      app.drawGraphic_text(
+                        app.shirtData.facesDatas[facesData].outer.graphics[i]
+                      );
+                    } else if(app.shirtData.facesDatas[facesData].outer.graphics[i]
+                        .type === "shape"){
+                          app.drawGraphic_shape(
+                        app.shirtData.facesDatas[facesData].outer.graphics[i]
+                      );
+                    } else if(app.shirtData.facesDatas[facesData].outer.graphics[i]
+                        .type === "image"){
+                          app.drawGraphic_image(
+                        app.shirtData.facesDatas[facesData].outer.graphics[i]
+                      );
+                    }
+                  }
+                }
+              }
+            });
+            //app.shared2dTextureCnvsCtx.restore(); // bypass weird bug effectively ?
+            // once all faces data have been drawn, add the 'details' for the seams & the textures with overlay blending mode
+          },
+          // mapping pane controls to one of the 'faces'
+          setActiveFace: function(e) {
+            console.log("setActiveFace method triggered ..");
+            console.log(this.value);
+          },
+          // adding a graphic item to a 'face' inner/outer chunk
+          addDefaultGraphicItem: function(faceId, faceType) {
+            //app.shirtData.facesDatas[faceId][faceType].graphics.push({ // if 'img' type is selected after adding graphic item, 'll draw it AFTER other stuff & hopefully [for now .. ] loaded already ? ..
+            app.shirtData.facesDatas[faceId][faceType].graphics.unshift({
+              name: "defaultGraphicData",
+              type: "shape", // shape||img||text||pattern
+              buddy: (Math.random() * 10).toFixed(2), // tmp debug
+              //idx: app.shirtData.facesDatas[faceId][faceType].graphics.length --> maybe use later for uid ?
+              // some 'generic' params, common to all 'tpyes'
+              position: { x: 0, y: 0 }, // R: 'll be relative to center OR top-left corner of 'face bounding rect'
+              scale: { x: 1, y: 1 }, // R: is likely to need change depending on the dimensions of shape/img/txt/pattern
+              _lockedScaleXY: true,
+              rotationInDeg: 0, // 2D CW rotation in degrees, centered to object being rotated
+              // & some less generic ones:
+              // we currently 'share' all params for each graphic objects,
+              // these may be empty, but are kept to be able to quickly change a type of graphic item
+              // and get back to the previous type's params or stuff ( does make sense ? )
+              // -- shape
+              _shapeType: "rectangle", // circle, rectangle, star, polygon, ..not quite useful for our 'main' needs
+              _shapeFilled: true,
+              _shapeFillColor: "#aaddff",
+              _shapeStroked: true,
+              _shapeStrokeColor: "#ffddaa",
+              _shapeWidth: 50,
+              _shapeHeight: 50,
+              _shapeStrokeWidth: 2,
+              // -- image ( R: can be an image covering an entire face if the user has DL-ed it & re-upload-ed it for preview )
+              _imageUrl: "defaultImgURL", // more useful ( R: provide way to upload imgs locally - aka to client )
+              // -- text
+              _textValue: "defaultTextValue",
+              _textFont: "Arial",
+              _textSize: "40",
+              _textFilled: false,
+              _textFillColor: "#deadbe", //, "cyan",
+              _textStroked: true,
+              _textStrokeColor: "#debeef", //"orange",
+              _textHorizontalAlign: "center", // left||center||right
+              _textVerticalAlign: "middle", // top||bottom||middle
+              testColor: '#debeef' //'rgba(255,0,255)' //'#00ff00' //'purple' // debugging color picker inputs & trying feaguring out why the heck updates but not correct initial color value/preview
+              // weirdly, seems to comes from using css color names or rgb() instead of #<hex>
+
+              // pattern
+              // --> we'll see later for this 'special' type & how to best integrate/implm its different parts ;P
+            });
+          },
+          // removing a graphic item to a 'face' inner/outer chunk
+          removeGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            app.shirtData.facesDatas[faceId][faceType].graphics.splice(
+              graphicItemIdx,
+              1
+            );
+          },
+          // moving a graphic item upmost in the layering stakck order for later drawing in correct order
+          layerUpMostGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (graphicItemIdx > 0) {
+              /*
+                    var toRePush = app.shirtData.facesDatas[faceId][
+                      faceType
+                    ].graphics.splice(graphicItemIdx, 1);
+                    */
+              var toRePush =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics.splice(
+                graphicItemIdx,
+                1
+              );
+              app.shirtData.facesDatas[faceId][faceType].graphics.unshift(
+                toRePush
+              );
+            }
+          },
+          // moving a graphic item downmost in the layering stakck order for later drawing in correct order
+          layerDownMostGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (
+              graphicItemIdx <
+              app.shirtData.facesDatas[faceId][faceType].graphics.length - 1
+            ) {
+              /* was the stuff updating BUT not triggering redraw
+                    var toRePush = app.shirtData.facesDatas[faceId][
+                      faceType
+                    ].graphics.splice(graphicItemIdx, 1);
+                    */
+              var toRePush =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics.splice(
+                graphicItemIdx,
+                1
+              );
+              app.shirtData.facesDatas[faceId][faceType].graphics.push(
+                toRePush
+              );
+              console.log(toRePush); // working fine
+              // won't trigger any redraw ?!
+              /*
+                    app.shirtData.facesDatas[faceId][faceType].graphics.push(
+                      toRePush
+                    );
+                    */
+              //  forces triggerring a Vue array detection change ?
+              /*
+                    Vue.set(
+                      app.shirtData.facesDatas[faceId][faceType].graphics,
+                      app.shirtData.facesDatas[faceId][faceType].graphics.length,
+                      toRePush
+                    );
+                    */
+            }
+          },
+          // moving a graphic item upward in the layering stakck order for later drawing in correct order
+          layerUpGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (graphicItemIdx > 0) {
+              var tmp =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx - 1
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics[
+                graphicItemIdx - 1
+              ] =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              /* contrary to adding or removing, won't trigger any redraw
+                    app.shirtData.facesDatas[faceId][faceType].graphics[
+                      graphicItemIdx
+                    ] = tmp;
+                    */
+              //  forces triggerring a Vue array detection change
+              Vue.set(
+                app.shirtData.facesDatas[faceId][faceType].graphics,
+                graphicItemIdx,
+                tmp
+              );
+            }
+          },
+          // moving a graphic item downward in the layering stakck order for later drawing in correct order
+          layerDownGraphicItem: function(faceId, faceType, graphicItemIdx) {
+            if (
+              graphicItemIdx <
+              app.shirtData.facesDatas[faceId][faceType].graphics.length - 1
+            ) {
+              var tmp =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx + 1
+                ];
+              app.shirtData.facesDatas[faceId][faceType].graphics[
+                graphicItemIdx + 1
+              ] =
+                app.shirtData.facesDatas[faceId][faceType].graphics[
+                  graphicItemIdx
+                ];
+              /* contrary to adding or removing, won't trigger any redraw
+                    app.shirtData.facesDatas[faceId][faceType].graphics[
+                      graphicItemIdx
+                    ] = tmp;
+                    */
+              //  forces triggerring a Vue array detection change
+              Vue.set(
+                app.shirtData.facesDatas[faceId][faceType].graphics,
+                graphicItemIdx,
+                tmp
+              );
+            }
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
